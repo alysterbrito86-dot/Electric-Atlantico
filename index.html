@@ -143,6 +143,12 @@ textarea{font:13px ui-monospace,monospace;width:100%;min-height:150px;border-rad
 #toast{position:fixed;left:50%;bottom:86px;transform:translateX(-50%);background:#13233d;color:#fff;padding:10px 16px;border-radius:10px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20;max-width:90vw}
 #toast.show{opacity:1}
 [hidden]{display:none!important}
+.empty{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(440px,calc(100% - 130px));background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 10px 30px #0c2a4d33}
+.empty b:first-child{font-size:20px}
+.empty p{margin:6px 0;color:var(--mut)}
+.empty ol{margin:0 0 12px;padding-left:20px;font-size:15px}
+.empty li{margin:4px 0}
+@media(max-width:560px){.empty{left:10px;right:100px;width:auto;transform:translateY(-50%)}}
 @media(max-width:380px){.bt b{font-size:17px}.bt span{font-size:13px}.side button{width:76px}}
 </style>
 </head>
@@ -201,6 +207,12 @@ textarea{font:13px ui-monospace,monospace;width:100%;min-height:150px;border-rad
     <div class="cv">
       <svg id="svg"></svg>
       <div class="ind" id="ind"></div>
+      <div class="empty" id="empty" hidden>
+        <b>Tu plano está vacío</b>
+        <p>Empieza por el croquis de la casa:</p>
+        <ol><li>Toca <b>“Dibujar un cuarto”</b> y arrastra el dedo o el mouse sobre la cuadrícula.</li><li>Toca el cuarto para ponerle su sector: sala, cocina, baño…</li><li>Con el botón naranja <b>+</b> colocas luminarias, tomas y apagadores.</li></ol>
+        <div class="acts"><button class="btn pri" id="emRoom">Dibujar un cuarto</button><button class="btn" id="emSample">Ver casa de ejemplo</button></div>
+      </div>
       <div class="side">
         <button data-sh="tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></svg>Herramientas</button>
         <button data-sh="layers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5zM3 13l9 5 9-5"/></svg>Capas</button>
@@ -374,6 +386,7 @@ function scene(X){
   return h;
 }
 function render(){
+  const em=$('#empty');if(em)em.hidden=!!(S.rooms.length||S.items.length||S.walls.length||S.wires.length)||mode!=='select'||!!draft.length;
   const X={room:'var(--room)',wall:'var(--wall)',mut:'var(--mut)',cu:'var(--cu)'};
   svg.innerHTML=`<defs><pattern id="pg" width=".5" height=".5" patternUnits="userSpaceOnUse"><path d="M.5 0H0V.5" fill="none" stroke="var(--grid)" stroke-width="${1/v.k}"/></pattern><pattern id="pG" width="5" height="5" patternUnits="userSpaceOnUse"><path d="M5 0H0V5" fill="none" stroke="var(--grid)" stroke-width="${2.5/v.k}"/></pattern></defs><g transform="translate(${v.x} ${v.y}) scale(${v.k})" font-family="Archivo,sans-serif">${layers.grid?'<rect x="-200" y="-200" width="400" height="400" fill="url(#pg)"/><rect x="-200" y="-200" width="400" height="400" fill="url(#pG)"/>':''}${scene(X)}</g>`;
 }
@@ -509,6 +522,8 @@ $('#sheet').addEventListener('click',e=>{
 $('#sheet').addEventListener('change',e=>{const k=e.target.dataset.ly;if(k){layers[k]=e.target.checked;try{localStorage.setItem('ea.capas',JSON.stringify(layers))}catch(_){}render()}if(e.target.id==='secSel'){sector=e.target.value||null;sel=null;panel();hint();fit();sheetClose()}});
 document.querySelectorAll('.side [data-sh]').forEach(b=>b.onclick=()=>sheetOpen(b.dataset.sh));
 $('#fab').onclick=()=>sheetOpen('syms');
+$('#emRoom').onclick=()=>setMode('room');
+$('#emSample').onclick=async()=>{await flush();openData(sample());flush()};
 function hint(){
   const H={select:'Toca un elemento para editarlo o moverlo. Arrastra el fondo para desplazarte; pellizca o usa + y − para el zoom.',room:'Arrastra sobre la cuadrícula para dibujar un cuarto (cada cuadro = 0.5 m).',wire:'Toca punto por punto el recorrido del cable. Se pega a los símbolos cercanos.',pared:'Toca esquina por esquina para trazar las paredes.'};
   const tl=TOOLS.find(t=>t[0]===mode)||['','',''],sr=S.rooms.find(r=>r.id===sector),elec=T[mode]&&!T[mode].arq&&mode!=='tab';
